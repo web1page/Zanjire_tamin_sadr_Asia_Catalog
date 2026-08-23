@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0b1f3a">
+  <meta name="description" content="دریافت و دانلود فایل PDF از طریق QR Code">
+  <title>دریافت فایل PDF</title>
+
+  <!-- فونت وزیرمتن -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- استایل‌ها -->
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --surface: #ffffff;
+      --primary: #0b1f3a; /* سرمه‌ای */
+      --primary-soft: #102b4e;
+      --blue: #2563eb;
+      --blue-hover: #1d4ed8;
+      --red: #e11d48;
+      --red-hover: #be123c;
+      --text: #0f172a;
+      --text-secondary: #64748b;
+      --border: #e2e8f0;
+      --shadow-sm: 0 4px 14px rgba(2, 12, 27, 0.05);
+      --shadow-md: 0 18px 35px -12px rgba(2, 12, 27, 0.12);
+      --shadow-lg: 0 25px 45px -15px rgba(37, 99, 235, 0.18);
+      --radius: 22px;
+      --radius-sm: 14px;
+      --transition: 0.22s ease;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Vazirmatn', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      background-image:
+        radial-gradient(circle at 10% 20%, rgba(37, 99, 235, 0.04), transparent 32%),
+        radial-gradient(circle at 90% 8%, rgba(225, 29, 72, 0.04), transparent 28%);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px 36px;
+    }
+
+    .page {
+      width: 100%;
+      max-width: 540px;
+      margin: 0 auto;
+      animation: pageFadeIn 0.6s ease both;
+    }
+
+    @keyframes pageFadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(14px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Header / Logo */
+    .header {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .logo-wrapper {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: var(--surface);
+      box-shadow: var(--shadow-md);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+      border: 2px solid rgba(255, 255, 255, 0.7);
+      animation: logoIn 0.6s ease both;
+    }
+
+    @keyframes logoIn {
+      from {
+        opacity: 0;
+        transform: scale(0.9);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    .logo-fallback {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: var(--blue);
+    }
+
+    .logo-fallback svg {
+      width: 36px;
+      height: 36px;
+    }
+
+    .logo-image {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: none;
+    }
+
+    /* Main Card */
+    .card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-md);
+      padding: 28px 24px;
+      border: 1px solid rgba(226, 232, 240, 0.7);
+      transition: box-shadow var(--transition), transform var(--transition);
+    }
+
+    .main-card {
+      text-align: center;
+      animation: cardFadeUp 0.6s ease 0.05s both;
+    }
+
+    @keyframes cardFadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(24px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .pdf-badge {
+      width: 68px;
+      height: 68px;
+      margin: 0 auto 18px;
+      border-radius: 20px;
+      background: linear-gradient(145deg, #fff1f2, #ffe4e6);
+      color: var(--red);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-shadow: 0 12px 24px -10px rgba(225, 29, 72, 0.25);
+    }
+
+    .pdf-badge svg {
+      width: 40px;
+      height: 40px;
+    }
+
+    .main-title {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--primary);
+      margin-bottom: 8px;
+      letter-spacing: -0.02em;
+    }
+
+    .main-description {
+      font-size: 0.98rem;
+      color: var(--text-secondary);
+      max-width: 360px;
+      margin: 0 auto 20px;
+    }
+
+    .file-info {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 14px 16px;
+      margin-bottom: 22px;
+      text-align: right;
+    }
+
+    .file-info-icon {
+      flex-shrink: 0;
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      background: #fff;
+      color: var(--red);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .file-info-icon svg {
+      width: 24px;
+      height: 24px;
+    }
+
+    .file-info-text {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      min-width: 0;
+    }
+
+    .file-name {
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: var(--text);
+      word-break: break-all;
+    }
+
+    .file-size {
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+    }
+
+    .actions {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .btn {
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 16px 20px;
+      font-size: 1rem;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition:
+        transform var(--transition),
+        box-shadow var(--transition),
+        background var(--transition),
+        border-color var(--transition);
+      text-decoration: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .btn:focus-visible {
+      outline: 3px solid rgba(37, 99, 235, 0.4);
+      outline-offset: 2px;
+    }
+
+    .btn:disabled,
+    .btn[disabled] {
+      opacity: 0.55;
+      cursor: not-allowed;
+      transform: none !important;
+      box-shadow: none !important;
+    }
+
+    .btn-icon {
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .btn-icon svg {
+      width: 21px;
+      height: 21px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #e11d48, #be123c);
+      color: #fff;
+      box-shadow: 0 14px 28px -10px rgba(225, 29, 72, 0.4);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: linear-gradient(135deg, #f43f5e, #e11d48);
+      transform: translateY(-2px);
+      box-shadow: 0 18px 32px -10px rgba(225, 29, 72, 0.45);
+    }
+
+    .btn-primary:active:not(:disabled) {
+      transform: translateY(0);
+      box-shadow: 0 8px 18px -8px rgba(225, 29, 72, 0.35);
+    }
+
+    .btn-secondary {
+      background: #fff;
+      color: var(--blue);
+      border: 1.5px solid rgba(37, 99, 235, 0.3);
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background: #f8fafc;
+      border-color: rgba(37, 99, 235, 0.55);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .btn-secondary:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    /* Contact Section */
+    .contact-section {
+      margin-top: 28px;
+      animation: cardFadeUp 0.6s ease 0.15s both;
+    }
+
+    .section-title {
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: var(--primary);
+      margin-bottom: 14px;
+      padding-right: 6px;
+    }
+
+    .contact-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .contact-card {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: var(--surface);
+      border-radius: var(--radius-sm);
+      padding: 15px 16px;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid rgba(226, 232, 240, 0.9);
+      text-decoration: none;
+      color: inherit;
+      transition:
+        transform var(--transition),
+        box-shadow var(--transition),
+        border-color var(--transition);
+    }
+
+    .contact-card:hover {
+      transform: translateX(-4px);
+      box-shadow: var(--shadow-md);
+      border-color: rgba(37, 99, 235, 0.25);
+    }
+
+    .contact-card:focus-visible {
+      outline: 3px solid rgba(37, 99, 235, 0.35);
+      outline-offset: 2px;
+    }
+
+    .contact-icon {
+      flex-shrink: 0;
+      width: 46px;
+      height: 46px;
+      border-radius: 13px;
+      background: #eff6ff;
+      color: var(--blue);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: background var(--transition), color var(--transition);
+    }
+
+    .contact-card:hover .contact-icon {
+      background: var(--blue);
+      color: #fff;
+    }
+
+    .contact-icon svg {
+      width: 24px;
+      height: 24px;
+    }
+
+    .contact-text {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .contact-title {
+      font-weight: 700;
+      font-size: 0.98rem;
+      color: var(--text);
+    }
+
+    .contact-subtitle {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      word-break: break-word;
+    }
+
+    .contact-arrow {
+      flex-shrink: 0;
+      color: #94a3b8;
+      display: flex;
+      align-items: center;
+      transition: color var(--transition), transform var(--transition);
+    }
+
+    .contact-arrow svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .contact-card:hover .contact-arrow {
+      color: var(--blue);
+      transform: translateX(-2px);
+    }
+
+    /* Footer */
+    .footer {
+      margin-top: 32px;
+      text-align: center;
+      color: #94a3b8;
+      font-size: 0.85rem;
+      animation: pageFadeIn 0.6s ease 0.25s both;
+    }
+
+    .footer p {
+      letter-spacing: 0.02em;
+    }
+
+    /* Responsive */
+    @media (max-width: 480px) {
+      body {
+        padding: 16px 12px 28px;
+      }
+
+      .card {
+        padding: 24px 16px;
+        border-radius: 18px;
+      }
+
+      .main-title {
+        font-size: 1.7rem;
+      }
+
+      .main-description {
+        font-size: 0.92rem;
+      }
+
+      .btn {
+        padding: 15px 14px;
+        font-size: 0.95rem;
+      }
+
+      .contact-card {
+        padding: 13px 14px;
+        gap: 12px;
+      }
+
+      .contact-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+      }
+
+      .contact-icon svg {
+        width: 22px;
+        height: 22px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <!-- لوگوی مجموعه -->
+    <header class="header">
+      <div class="logo-wrapper" id="logoWrapper">
+        <div class="logo-fallback" id="logoFallback" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/>
+          </svg>
+        </div>
+        <img id="logoImage" class="logo-image" alt="لوگو مجموعه">
+      </div>
+    </header>
+
+    <!-- کارت اصلی دریافت فایل -->
+    <section class="card main-card" aria-labelledby="mainTitle">
+      <div class="pdf-badge" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+          <path d="M14 2V8H20" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+          <path d="M8.5 13H15.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+          <path d="M8.5 16.5H15.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+          <path d="M8.5 9.5H10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+      </div>
+
+      <h1 id="mainTitle" class="main-title">دریافت فایل</h1>
+      <p class="main-description">برای مشاهده یا دانلود فایل موردنظر، روی دکمه زیر کلیک کنید.</p>
+
+      <div class="file-info" aria-live="polite">
+        <span class="file-info-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+            <path d="M14 2V8H20" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+            <path d="M9 13H15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+            <path d="M9 17H15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+          </svg>
+        </span>
+        <div class="file-info-text">
+          <span class="file-name" id="fileName">فایل PDF</span>
+          <span class="file-size" id="fileSize">حجم فایل: —</span>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button type="button" id="downloadBtn" class="btn btn-primary">
+          <span class="btn-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 3V16M12 16L7 11M12 16L17 11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M4 19H20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+          </span>
+          دانلود فایل PDF
+        </button>
+
+        <button type="button" id="viewBtn" class="btn btn-secondary">
+          <span class="btn-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M1 12C1 12 5 4 12 4C19 4 23 12 23 12C23 12 19 20 12 20C5 20 1 12 1 12Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+              <circle cx="12" cy="12" r="3.5" stroke="currentColor" stroke-width="1.7"/>
+            </svg>
+          </span>
+          مشاهده آنلاین
+        </button>
+      </div>
+    </section>
+
+    <!-- راه‌های ارتباطی -->
+    <section class="contact-section" aria-labelledby="contactTitle">
+      <h2 id="contactTitle" class="section-title">راه‌های ارتباطی</h2>
+
+      <div class="contact-list">
+        <a id="contactPhone" href="#" class="contact-card">
+          <span class="contact-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M22 16.92V19.92C22 20.47 21.8 21 21.37 21.34C20.94 21.68 20.35 21.84 19.76 21.74C17.84 21.41 16.02 20.7 14.32 19.64C12.72 18.64 11.35 17.27 10.33 15.67C9.28 13.98 8.58 12.16 8.25 10.24C8.15 9.65 8.31 9.06 8.65 8.63C8.99 8.2 9.52 8 10.07 8H13.07C13.53 8 13.95 8.21 14.13 8.56L14.95 10.37C15.11 10.69 15.07 11.08 14.85 11.37L13.92 12.68C14.48 13.8 15.23 14.79 16.14 15.59C16.57 16 17.1 16.29 17.66 16.44L18.48 16.64C18.87 16.76 19.19 17.05 19.32 17.43C19.45 17.81 19.38 18.22 19.12 18.51L18.12 19.51C17.93 19.7 17.68 19.81 17.42 19.85L17.08 19.93" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+          <span class="contact-text">
+            <span class="contact-title">تماس با ما</span>
+            <span class="contact-subtitle" id="phoneSub">شماره تماس</span>
+          </span>
+          <span class="contact-arrow" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+        </a>
+
+        <a id="contactLocation" href="#" class="contact-card">
+          <span class="contact-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M20 10C20 15 12 22 12 22C12 22 4 15 4 10C4 5.58 7.58 2 12 2C16.42 2 20 5.58 20 10Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+              <circle cx="12" cy="10" r="3" stroke="currentColor" stroke-width="1.6"/>
+            </svg>
+          </span>
+          <span class="contact-text">
+            <span class="contact-title">موقعیت مکانی</span>
+            <span class="contact-subtitle" id="locationSub">مشاهده روی نقشه</span>
+          </span>
+          <span class="contact-arrow" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+        </a>
+
+        <a id="contactBaleTransport" href="#" class="contact-card">
+          <span class="contact-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M3 7H17C19.2 7 21 8.8 21 11V17C21 19.2 19.2 21 17 21H3V7Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+              <path d="M3 7V5C3 3.9 3.9 3 5 3H16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+              <circle cx="7" cy="12" r="1.5" fill="currentColor"/>
+              <path d="M12 12H18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+            </svg>
+          </span>
+          <span class="contact-text">
+            <span class="contact-title">کانال حمل و نقل در بله</span>
+            <span class="contact-subtitle" id="baleTransportSub">ورود به کانال</span>
+          </span>
+          <span class="contact-arrow" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+        </a>
+
+        <a id="contactBaleInsurance" href="#" class="contact-card">
+          <span class="contact-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 3L20 6V12C20 16.4 17 20.5 12 22C7 20.5 4 16.4 4 12V6L12 3Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+              <path d="M9 12L11 14L15 10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+          <span class="contact-text">
+            <span class="contact-title">کانال بیمه در بله</span>
+            <span class="contact-subtitle" id="baleInsuranceSub">ورود به کانال</span>
+          </span>
+          <span class="contact-arrow" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+        </a>
+
+        <a id="contactSite" href="#" class="contact-card">
+          <span class="contact-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/>
+              <path d="M3 12H21" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+              <path d="M12 3C14.5 5.5 16 8.5 16 12C16 15.5 14.5 18.5 12 21C9.5 18.5 8 15.5 8 12C8 8.5 9.5 5.5 12 3Z" stroke="currentColor" stroke-width="1.6"/>
+            </svg>
+          </span>
+          <span class="contact-text">
+            <span class="contact-title">سایت صدرامال</span>
+            <span class="contact-subtitle" id="siteSub">وب‌سایت رسمی</span>
+          </span>
+          <span class="contact-arrow" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+        </a>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <p>تمامی حقوق محفوظ است.</p>
+    </footer>
+  </main>
+
+  <!-- اسکریپت‌ها -->
+  <script>
+    'use strict';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // ================= تنظیمات قابل ویرایش =================
+      const CONFIG = {
+        // لینک مستقیم فایل PDF (مهم‌ترین بخش)
+        pdfUrl: 'https://example.com/your-file.pdf',
+
+        // نام نمایشی فایل (اختیاری)
+        fileName: 'document.pdf',
+
+        // حجم فایل (اختیاری)
+        fileSize: '۲.۴ مگابایت',
+
+        // لوگو (در صورت تمایل URL تصویر قرار دهید؛ خالی = آیکون پیش‌فرض)
+        logoUrl: '',
+
+        // اطلاعات تماس
+        phone: '09123456789', // شماره بدون فاصله
+        phoneDisplay: '۰۹۱۲ ۳۴۵ ۶۷۸۹', // شماره نمایشی
+
+        // لینک نقشه (Google Maps یا نشان)
+        locationUrl: 'https://maps.google.com/?q=35.7000,51.4000',
+        locationText: 'مشاهده روی نقشه',
+
+        // کانال‌های بله
+        baleTransportUrl: 'https://ble.ir/your-transport-channel',
+        baleTransportText: 'ورود به کانال حمل و نقل',
+
+        baleInsuranceUrl: 'https://ble.ir/your-insurance-channel',
+        baleInsuranceText: 'ورود به کانال بیمه',
+
+        // سایت صدرامال
+        siteUrl: 'https://sadraamal.ir',
+        siteText: 'وب‌سایت رسمی صدرامال'
+      };
+      // =======================================================
+
+      // عناصر DOM
+      const downloadBtn = document.getElementById('downloadBtn');
+      const viewBtn = document.getElementById('viewBtn');
+      const fileNameEl = document.getElementById('fileName');
+      const fileSizeEl = document.getElementById('fileSize');
+
+      const phoneLink = document.getElementById('contactPhone');
+      const phoneSub = document.getElementById('phoneSub');
+
+      const locationLink = document.getElementById('contactLocation');
+      const locationSub = document.getElementById('locationSub');
+
+      const baleTransportLink = document.getElementById('contactBaleTransport');
+      const baleTransportSub = document.getElementById('baleTransportSub');
+
+      const baleInsuranceLink = document.getElementById('contactBaleInsurance');
+      const baleInsuranceSub = document.getElementById('baleInsuranceSub');
+
+      const siteLink = document.getElementById('contactSite');
+      const siteSub = document.getElementById('siteSub');
+
+      const logoWrapper = document.getElementById('logoWrapper');
+      const logoImage = document.getElementById('logoImage');
+      const logoFallback = document.getElementById('logoFallback');
+
+      const isPdfConfigured =
+        CONFIG.pdfUrl && CONFIG.pdfUrl.trim() !== '' && CONFIG.pdfUrl !== '#';
+
+      // تنظیم نام و حجم فایل
+      if (fileNameEl) {
+        fileNameEl.textContent = CONFIG.fileName || 'فایل PDF';
+      }
+
+      if (fileSizeEl) {
+        if (CONFIG.fileSize) {
+          fileSizeEl.textContent = `حجم فایل: ${CONFIG.fileSize}`;
+        } else {
+          fileSizeEl.style.display = 'none';
+        }
+      }
+
+      // تنظیم لوگو
+      if (logoImage && logoFallback && logoWrapper) {
+        if (CONFIG.logoUrl && CONFIG.logoUrl.trim() !== '') {
+          logoImage.src = CONFIG.logoUrl;
+          logoImage.style.display = 'block';
+          logoFallback.style.display = 'none';
+          logoWrapper.setAttribute('aria-label', 'لوگو مجموعه');
+        } else {
+          logoImage.style.display = 'none';
+          logoFallback.style.display = 'flex';
+        }
+      }
+
+      // تنظیم لینک تماس
+      if (phoneLink) {
+        phoneLink.href = `tel:${CONFIG.phone}`;
+      }
+
+      if (phoneSub) {
+        phoneSub.textContent = CONFIG.phoneDisplay || CONFIG.phone;
+      }
+
+      // تنظیم لینک مکان
+      if (locationLink) {
+        locationLink.href = CONFIG.locationUrl;
+        locationLink.target = '_blank';
+        locationLink.rel = 'noopener';
+      }
+
+      if (locationSub) {
+        locationSub.textContent = CONFIG.locationText || 'مشاهده روی نقشه';
+      }
+
+      // تنظیم کانال حمل و نقل بله
+      if (baleTransportLink) {
+        baleTransportLink.href = CONFIG.baleTransportUrl;
+        baleTransportLink.target = '_blank';
+        baleTransportLink.rel = 'noopener';
+      }
+
+      if (baleTransportSub) {
+        baleTransportSub.textContent = CONFIG.baleTransportText || 'ورود به کانال';
+      }
+
+      // تنظیم کانال بیمه بله
+      if (baleInsuranceLink) {
+        baleInsuranceLink.href = CONFIG.baleInsuranceUrl;
+        baleInsuranceLink.target = '_blank';
+        baleInsuranceLink.rel = 'noopener';
+      }
+
+      if (baleInsuranceSub) {
+        baleInsuranceSub.textContent = CONFIG.baleInsuranceText || 'ورود به کانال';
+      }
+
+      // تنظیم سایت صدرامال
+      if (siteLink) {
+        siteLink.href = CONFIG.siteUrl;
+        siteLink.target = '_blank';
+        siteLink.rel = 'noopener';
+      }
+
+      if (siteSub) {
+        siteSub.textContent = CONFIG.siteText || 'وب‌سایت رسمی';
+      }
+
+      // دکمه دانلود
+      if (downloadBtn && viewBtn) {
+        if (!isPdfConfigured) {
+          downloadBtn.disabled = true;
+          downloadBtn.title = 'لینک فایل PDF تنظیم نشده است.';
+          viewBtn.disabled = true;
+          viewBtn.title = 'لینک فایل PDF تنظیم نشده است.';
+        } else {
+          downloadBtn.addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.href = CONFIG.pdfUrl;
+            link.download = CONFIG.fileName || 'file.pdf';
+            link.rel = 'noopener';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+          });
+
+          viewBtn.addEventListener('click', () => {
+            window.open(CONFIG.pdfUrl, '_blank', 'noopener');
+          });
+        }
+      }
+    });
+  </script>
+</body>
+</html>
